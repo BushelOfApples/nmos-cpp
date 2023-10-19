@@ -1,7 +1,8 @@
 #ifndef MDNS_DNS_SD_IMPL_H
 #define MDNS_DNS_SD_IMPL_H
 
-#include "dns_sd.h"
+//#include "dns_sd.h"
+#include "avahi-compat-libdns_sd/dns_sd.h"
 
 // dnssd_sock_t was added relatively recently (765.1.2)
 typedef decltype(DNSServiceRefSockFD(0)) DNSServiceRefSockFD_t;
