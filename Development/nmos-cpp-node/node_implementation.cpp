@@ -142,8 +142,13 @@ namespace impl
         // example number/enum event
         const port catcall{ U("c") };
 
-        const std::vector<port> rtp{ video, audio, data, mux };
-        const std::vector<port> ws{ temperature, burn, nonsense, catcall };
+        // CC custom GPO port
+        const port GPO{ U("gpo-port") };
+
+        //const std::vector<port> rtp{ video, audio, data, mux };
+        const std::vector<port> rtp{ };
+        //const std::vector<port> ws{ temperature, burn, nonsense, catcall, GPO };
+        const std::vector<port> ws{ GPO };
         const std::vector<port> all{ boost::copy_range<std::vector<port>>(boost::range::join(rtp, ws)) };
     }
 
@@ -654,6 +659,13 @@ void node_implementation_init(nmos::node_model& model, slog::base_gate& gate)
                 });
                 events_state = nmos::make_events_number_state({ source_id, flow_id }, 1, event_type);
             }
+            else if (impl::ports::GPO == port)
+            {
+                event_type = nmos::event_types::boolean;
+
+                events_type = nmos::make_events_boolean_type();
+                events_state = nmos::make_events_boolean_state({ source_id, flow_id }, false);
+            }
 
             // grain_rate is not set because these events are aperiodic
             auto source = nmos::make_data_source(source_id, device_id, {}, event_type, model.settings);
@@ -946,12 +958,17 @@ void node_implementation_run(nmos::node_model& model, slog::base_gate& gate)
                             const auto& nonsense = *(nonsenses.begin() + (std::min)(std::geometric_distribution<size_t>()(*events_engine), nonsenses.size() - 1));
                             nmos::fields::endpoint_state(resource.data) = nmos::make_events_string_state({ source_id, flow_id }, nonsense);
                         }
-                        else if (impl::ports::catcall == port)
+                        // else if (impl::ports::catcall == port)
+                        // {
+                        //     const auto catcalls = { 1, 2, 4, 8 };
+                        //     const auto& catcall = *(catcalls.begin() + (std::min)(std::geometric_distribution<size_t>()(*events_engine), catcalls.size() - 1));
+                        //     nmos::fields::endpoint_state(resource.data) = nmos::make_events_number_state({ source_id, flow_id }, catcall, impl::catcall);
+                        // }
+                        else if (impl::ports::GPO == port)
                         {
-                            const auto catcalls = { 1, 2, 4, 8 };
-                            const auto& catcall = *(catcalls.begin() + (std::min)(std::geometric_distribution<size_t>()(*events_engine), catcalls.size() - 1));
-                            nmos::fields::endpoint_state(resource.data) = nmos::make_events_number_state({ source_id, flow_id }, catcall, impl::catcall);
+                            nmos::fields::endpoint_state(resource.data) = nmos::make_events_boolean_state({ source_id, flow_id }, temp.scaled_value() > 0.0);
                         }
+                        
                     });
                 }
             }
