@@ -1010,10 +1010,7 @@ void processGPOStatus(unsigned short card, unsigned short pin, bool on)
         {
             GPOStates[gpoNum] = on;
         }
-
-
     }
-   
 }
 
 // Example System API node behaviour callback to perform application-specific operations when the global configuration resource changes
