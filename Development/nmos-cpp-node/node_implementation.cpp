@@ -44,6 +44,8 @@
 #include "nmos/video_jxsv.h"
 #include "sdp/sdp.h"
 
+bool GPOStates[6] = {false,false,false,false,false,false};
+
 // example node implementation details
 namespace impl
 {
@@ -958,15 +960,15 @@ void node_implementation_run(nmos::node_model& model, slog::base_gate& gate)
                             const auto& nonsense = *(nonsenses.begin() + (std::min)(std::geometric_distribution<size_t>()(*events_engine), nonsenses.size() - 1));
                             nmos::fields::endpoint_state(resource.data) = nmos::make_events_string_state({ source_id, flow_id }, nonsense);
                         }
-                        // else if (impl::ports::catcall == port)
-                        // {
-                        //     const auto catcalls = { 1, 2, 4, 8 };
-                        //     const auto& catcall = *(catcalls.begin() + (std::min)(std::geometric_distribution<size_t>()(*events_engine), catcalls.size() - 1));
-                        //     nmos::fields::endpoint_state(resource.data) = nmos::make_events_number_state({ source_id, flow_id }, catcall, impl::catcall);
-                        // }
+                        else if (impl::ports::catcall == port)
+                        {
+                            const auto catcalls = { 1, 2, 4, 8 };
+                            const auto& catcall = *(catcalls.begin() + (std::min)(std::geometric_distribution<size_t>()(*events_engine), catcalls.size() - 1));
+                            nmos::fields::endpoint_state(resource.data) = nmos::make_events_number_state({ source_id, flow_id }, catcall, impl::catcall);
+                        }
                         else if (impl::ports::GPO == port)
                         {
-                            nmos::fields::endpoint_state(resource.data) = nmos::make_events_boolean_state({ source_id, flow_id }, temp.scaled_value() > 0.0);
+                            nmos::fields::endpoint_state(resource.data) = nmos::make_events_boolean_state({ source_id, flow_id }, GPOStates[index]);                        
                         }
                         
                     });
@@ -988,6 +990,30 @@ void node_implementation_run(nmos::node_model& model, slog::base_gate& gate)
     // wait without the lock since it is also used by the background tasks
     nmos::details::reverse_lock_guard<nmos::read_lock> unlock{ lock };
     events.wait();
+}
+
+
+void processGPOStatus(unsigned short card, unsigned short pin, bool on)
+{
+    unsigned short mask = 0x0001;
+    if (card != 28)
+    {
+        return;
+    }
+
+    unsigned short gpoIndex;
+    for(int gpoNum =0; gpoNum < 6; gpoNum++)
+    {
+        gpoIndex = (pin >> (2*gpoNum));
+        gpoIndex = gpoIndex & mask;
+        if(gpoIndex == 1)
+        {
+            GPOStates[gpoNum] = on;
+        }
+
+
+    }
+   
 }
 
 // Example System API node behaviour callback to perform application-specific operations when the global configuration resource changes
